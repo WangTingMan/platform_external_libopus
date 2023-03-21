@@ -99,6 +99,15 @@ POSSIBILITY OF SUCH DAMAGE.
 /* add/subtract with output saturated */
 /* use clang builtin overflow detectors */
 static OPUS_INLINE opus_int32 silk_ADD_SAT32(opus_int32 a, opus_int32 b) {
+#ifdef _MSC_VER
+    opus_int32 res;
+    opus_int32 a32 = a;
+    opus_int32 b32 = b;
+    res =    ((((a32) + (b32)) & 0x80000000) == 0 ?                                    \
+            ((((a32) & (b32)) & 0x80000000) != 0 ? silk_int32_MIN : (a32)+(b32)) :    \
+            ((((a32) | (b32)) & 0x80000000) == 0 ? silk_int32_MAX : (a32)+(b32)) );
+    return res;
+#else
     opus_int32 c;
     if (__builtin_add_overflow(a, b, &c)) {
         // overflowed
@@ -108,9 +117,19 @@ static OPUS_INLINE opus_int32 silk_ADD_SAT32(opus_int32 a, opus_int32 b) {
             c = silk_int32_MAX;
     }
     return c;
+#endif
 }
 
 /* use clang builtin overflow detectors */
+#ifdef _MSC_VER
+static OPUS_INLINE opus_int32 silk_SUB_SAT32( opus_int32 a32, opus_int32 b32 ) {
+    opus_int32 res;
+    res =     ((((a32)-(b32)) & 0x80000000) == 0 ?                                            \
+            (( (a32) & ((b32)^0x80000000) & 0x80000000) ? silk_int32_MIN : (a32)-(b32)) :    \
+            ((((a32)^0x80000000) & (b32)  & 0x80000000) ? silk_int32_MAX : (a32)-(b32)) );
+    return res;
+}
+#else
 static OPUS_INLINE opus_int32 silk_SUB_SAT32(opus_int32 a, opus_int32 b) {
     opus_int32 c;
     if (__builtin_sub_overflow(a, b, &c)) {
@@ -122,6 +141,7 @@ static OPUS_INLINE opus_int32 silk_SUB_SAT32(opus_int32 a, opus_int32 b) {
     }
     return c;
 }
+#endif
 
 #if defined(MIPSr1_ASM)
 #include "mips/macros_mipsr1.h"

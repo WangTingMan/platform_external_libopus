@@ -89,7 +89,8 @@
  */
 
 #ifndef SIMD_EXTRA_ALLOC_BYTES
-#error define SIMD_EXTRA_ALLOC_BYTES appropriately in your makefile
+//#error define SIMD_EXTRA_ALLOC_BYTES appropriately in your makefile
+#define SIMD_EXTRA_ALLOC_BYTES 16
 /*
  * Useful values:
  * 0  for an all-scalar processor, which should never over-read the arrays

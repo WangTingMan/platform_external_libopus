@@ -46,6 +46,8 @@
 #include "stack_alloc.h"
 #include "float_cast.h"
 
+#include <stdint.h>
+
 #ifndef M_PI
 #define M_PI 3.141592653
 #endif
@@ -149,10 +151,14 @@ static opus_val32 silk_resampler_down2_hp(
         out32_hp  = ADD32( out32_hp, X );
         S[ 2 ] = ADD32( -in32, X );
 
+#ifdef _MSC_VER
+        hp_ener += out32_hp*(opus_val64)out32_hp;
+#else
         if(__builtin_add_overflow(hp_ener, out32_hp*(opus_val64)out32_hp, &hp_ener))
         {
            hp_ener = UINT64_MAX;
         }
+#endif
         /* Add, convert back to int16 and store to output */
         out[ k ] = HALF32(out32);
     }

@@ -448,28 +448,40 @@ static OPUS_INLINE opus_int32 silk_ROR32( opus_int32 a32, opus_int rot )
 
 /* Adds two signed 32-bit values in a way that can overflow, while not relying on undefined behaviour
    (just standard two's complement implementation-specific behaviour) */
+#ifdef _MSC_VER
+#define silk_ADD32_ovflw(a, b)              ((opus_int32)((opus_uint32)(a) + (opus_uint32)(b)))
+#else
 static OPUS_INLINE opus_int32 silk_ADD32_ovflw(opus_int32 a, opus_int32 b) {
     opus_int32  _c;
     __builtin_add_overflow(a, b, &_c);
     return _c;
 }
+#endif
 
 /* Subtractss two signed 32-bit values in a way that can overflow, while not relying on undefined behaviour
    (just standard two's complement implementation-specific behaviour) */
+#ifdef _MSC_VER
+#define silk_SUB32_ovflw(a, b)              ((opus_int32)((opus_uint32)(a) - (opus_uint32)(b)))
+#else
 static OPUS_INLINE opus_int32 silk_SUB32_ovflw(opus_int32 a, opus_int32 b) {
     opus_int32  _c;
     __builtin_sub_overflow(a, b, &_c);
     return _c;
 }
+#endif
 
 /* Multiply-accumulate macros that allow overflow in the addition (ie, no asserts in debug mode) */
 /* .. also ignoring multiply overflows; caller has comment about this happening occasionally */
+#ifdef _MSC_VER
+#define silk_MLA_ovflw(a32, b32, c32)       silk_ADD32_ovflw((a32), (opus_uint32)(b32) * (opus_uint32)(c32))
+#else
 static OPUS_INLINE opus_int32 silk_MLA_ovflw(opus_int32 a, opus_int32 b, opus_int32 c) {
     opus_int32 _d, _e;
     __builtin_mul_overflow(b, c, &_d);
     __builtin_add_overflow(a, _d, &_e);
     return _e;
 }
+#endif
 
 #define silk_SMLABB_ovflw(a32, b32, c32)    (silk_ADD32_ovflw((a32) , ((opus_int32)((opus_int16)(b32))) * (opus_int32)((opus_int16)(c32))))
 
@@ -512,12 +524,16 @@ static OPUS_INLINE opus_int32 silk_MLA_ovflw(opus_int32 a, opus_int32 b, opus_in
 /* Add with saturation for positive input values */
 #define silk_ADD_POS_SAT8(a, b)             ((((a)+(b)) & 0x80)                 ? silk_int8_MAX  : ((a)+(b)))
 #define silk_ADD_POS_SAT16(a, b)            ((((a)+(b)) & 0x8000)               ? silk_int16_MAX : ((a)+(b)))
+#ifdef _MSC_VER
+#define silk_ADD_POS_SAT32(a, b)            ((((opus_uint32)(a)+(opus_uint32)(b)) & 0x80000000) ? silk_int32_MAX : ((a)+(b)))
+#else
 static OPUS_INLINE opus_int32 silk_ADD_POS_SAT32(opus_int32 a, opus_int32 b) {
     opus_int32  _c;
     if (__builtin_add_overflow(a, b, &_c))
         return silk_int32_MAX;
     return _c;
 }
+#endif
 
 #define silk_LSHIFT8(a, shift)              ((opus_int8)((opus_uint8)(a)<<(shift)))         /* shift >= 0, shift < 8  */
 #define silk_LSHIFT16(a, shift)             ((opus_int16)((opus_uint16)(a)<<(shift)))       /* shift >= 0, shift < 16 */
